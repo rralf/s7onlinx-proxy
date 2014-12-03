@@ -15,7 +15,7 @@ Compilation
 
 Import it in Visual Studio, compile. The result will be the dll "s7onlinx.dll".
 
-Replacing the proxy dll
+Placing the proxy dll
 ==============
  - Go to "C:\Windows\SysWOW64\"
  - Rename the original "s7onlinx.dll" to s7onlinx_.dll (some processes might still use that dll, kill those processes)
