@@ -1,0 +1,4 @@
+LIBRARY s7onlinx.dll
+EXPORTS
+SCP_receive=proxy_SCP_receive @17
+SCP_send=proxy_SCP_send @18
