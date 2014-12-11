@@ -142,17 +142,20 @@ extern "C" int __stdcall proxy_SCP_send(int handle, UWORD length, char* data)
 	typedef int(__stdcall *pS)(int, UWORD, char*);
 	pS pps = (pS)original_send;
 	int retval = pps(handle, length, data); // original call
+	uint16_t ulength = *(uint16_t*)(data + 16);
 	
-	// Drop the packet if it has less than 50 Bytes
-	if (length > 0x50) {
-		ostringstream message;
-		message << "Packet Send #" << ++send_count << " Length: " << (int)length << " Return Code: " << retval;
-		log(message.str());
+	// Drop the packet if it has less 4 Byte User Data
+	if (length < 0x50 || ulength < 4 || data[0x50] != 0x72)
+		return retval;
 
-		Packet p = encapsulate_tpkt(data + 0x50, length - 0x50);
-		pcap_send->writePacket(p);
-		pcap_amalgamation->writePacket(p);
-	}
+
+	ostringstream message;
+	message << "Packet Send #" << ++send_count << "Length: " << (int)length << " User Length: " << (int)ulength << " Return Code: " << retval;
+	log(message.str());
+
+	Packet p = encapsulate_tpkt(data + 0x50, ulength);
+	pcap_send->writePacket(p);
+	pcap_amalgamation->writePacket(p);
 
 	return retval;
 }
@@ -162,17 +165,18 @@ extern "C" int __stdcall proxy_SCP_receive(int handle, UWORD timeout, UWORD* dat
 	typedef int(__stdcall *pS)(int, UWORD, UWORD*, UWORD, char*);
 	pS pps = (pS)original_receive;
 	int retval = pps(handle, timeout, data_len, length, data); // original call
+	uint16_t ulength = *(uint16_t*)(data + 16);
 
-	// Drop the packet if it has less than 50 Bytes
-	if (length > 0x50) {
-		ostringstream message;
-		message << "Packet Rcv #" << ++receive_count << " Length: " << (int)length << " Data_Len: " << (int)*data_len << " Return Code: " << retval;
-		log(message.str());
+	// Drop the packet if it has less 4 Byte User Data
+	if (length < 0x50 || ulength < 4 || data[0x50] != 0x72)
+		return retval;
 
-		Packet p = encapsulate_tpkt(data + 0x50, length - 0x50);
-		pcap_recv->writePacket(p);
-		pcap_amalgamation->writePacket(p);
-	}
+	ostringstream message;
+	message << "Packet Rcv #" << ++receive_count << " Lenth: " << (int)length << " User Length: " << (int)ulength << " Data_Len: " << (int)*data_len << " Return Code: " << retval;
+	log(message.str());
 
+	Packet p = encapsulate_tpkt(data + 0x50, ulength);
+	pcap_recv->writePacket(p);
+	pcap_amalgamation->writePacket(p);
 	return retval;
 }
